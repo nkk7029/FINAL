@@ -14,7 +14,7 @@
   </style>
 </head>
 <body>
-  <h1>Steganography and Cryptography Assignment: Nardos Kassa 1002067029</h1>
+  <h1>Steganography and Cryptography Assignment</h1>
 
   <!-- Login Section -->
   <section id="login">
@@ -148,14 +148,14 @@
       const link = document.getElementById(linkId);
       link.href = url;
       link.download = name;
-      link.textContent = `⬇️ Download ${name}`;
+      link.textContent = ⬇️ Download ${name};
       link.style.display = 'block';
     }
 
     // Login
     document.getElementById('loginBtn').onclick = () => {
       const user = document.getElementById('usernameInput').value;
-      document.getElementById('loginStatus').textContent = user ? `Logged in as ${user}` : 'Please enter username';
+      document.getElementById('loginStatus').textContent = user ? Logged in as ${user} : 'Please enter username';
     };
 
     // Password
@@ -179,7 +179,7 @@
         const stegoBuf = embedBuffers(carrierBuf, msgBuf);
         const ext = (carrierFile.name.match(/(\.[^.]+)$/) || [''])[0];
         const base = carrierFile.name.replace(/(\.[^.]+)$/, '');
-        downloadBlob(new Blob([stegoBuf], { type: carrierFile.type || 'application/octet-stream' }), `${base}_stego${ext}`, 'downloadLink');
+        downloadBlob(new Blob([stegoBuf], { type: carrierFile.type || 'application/octet-stream' }), ${base}_stego${ext}, 'downloadLink');
       };
       reader.readAsArrayBuffer(carrierFile);
     };
