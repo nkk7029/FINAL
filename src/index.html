@@ -8,125 +8,176 @@
     body { font-family: sans-serif; padding: 1rem; max-width: 800px; margin: auto; }
     h1 { text-align: center; }
     section { border: 1px solid #ddd; padding: 1rem; margin-bottom: 1rem; border-radius: 4px; }
-    input, textarea, select, button, a { display: block; width: 100%; margin: .5rem 0; }
+    label, input, textarea, select, button, a { display: block; width: 100%; margin: .5rem 0; }
     button, a { cursor: pointer; text-align: center; padding: .5rem; background: #0288d1; color: white; border: none; border-radius: 4px; text-decoration: none; }
-    .half { width: 48%; display: inline-block; vertical-align: top; }
-    .invisible { display: none; }
-    #img, #cover { max-width: 100%; border: 1px solid #ccc; margin-bottom: .5rem; }
-    #message-container { border: 1px dashed #0288d1; padding: .5rem; border-radius: 4px; }
-    #capacity { font-weight: bold; }
+    a { background: none; color: #0288d1; padding: 0; margin: .5rem 0; }
   </style>
 </head>
 <body>
-  <h1>Steganography and Cryptography Assignment 4.0</h1>
+  <h1>Steganography and Cryptography Assignment</h1>
 
   <!-- LSB Steganography -->
   <section id="stego">
     <h2>LSB Steganography</h2>
-    <input type="file" id="file" accept="image/*" />
-    <div>
-      <img id="img" alt="Original Image" class="half" />
-      <img id="cover" alt="Stego Image" class="half invisible" />
-    </div>
-    <textarea id="text" placeholder="Enter message to hide..."></textarea>
-    <div id="capacity">(0/0 chars)</div>
-    <button id="hide">Hide Message</button>
-    <button id="read">Read Message</button>
-    <div id="message-container" class="invisible">
-      <p>Decoded: <span id="message"></span></p>
-      <button id="copy">Copy to Clipboard</button>
-    </div>
-    <a id="download">Download Stego Image</a>
+    <label>Carrier Image:</label>
+    <input type="file" id="carrierInput" accept="image/*" />
+    <label>Secret Message:</label>
+    <input type="text" id="secretMsg" placeholder="Enter your secret" />
+    <button id="encodeBtn">Encode & Download</button>
+    <a id="downloadLink" style="display:none; margin-top:.5rem;"></a>
+    <hr/>
+    <label>Stego Image:</label>
+    <input type="file" id="stegoInput" accept="image/*" />
+    <button id="decodeBtn">Decode Secret</button>
+    <p id="decoded"></p>
   </section>
 
-  <!-- Symmetric, Hashing, RSA sections omitted for brevity -->
+  <!-- Symmetric Encryption -->
+  <section id="symmetric">
+    <h2>Symmetric Encryption</h2>
+    <label>Algorithm:</label>
+    <select id="symAlgo">
+      <option value="AES">AES</option>
+      <option value="3DES">3DES</option>
+    </select>
+    <label>Passphrase:</label>
+    <input type="password" id="symKey" placeholder="Password / Passphrase" />
+    <label>Plaintext:</label>
+    <textarea id="plainText" placeholder="Enter plaintext..."></textarea>
+    <button id="encryptSym">Encrypt</button>
+    <label>Ciphertext:</label>
+    <textarea id="cipherText" placeholder="Ciphertext output..."></textarea>
+    <button id="decryptSym">Decrypt</button>
+    <label>Decrypted Text:</label>
+    <textarea id="decryptedText" placeholder="Decrypted text..."></textarea>
+  </section>
 
-  <!-- External Libraries -->
+  <!-- Hashing -->
+  <section id="hashing">
+    <h2>Hashing</h2>
+    <label>Algorithm:</label>
+    <select id="hashAlgo">
+      <option value="SHA256">SHA-256</option>
+      <option value="SHA3">SHA-3</option>
+    </select>
+    <label>Message:</label>
+    <textarea id="hashInput" placeholder="Message to hash..."></textarea>
+    <button id="doHash">Hash it</button>
+    <label>Hash Output:</label>
+    <textarea id="hashOutput" placeholder="Hash output..."></textarea>
+  </section>
+
+  <!-- Asymmetric RSA -->
+  <section id="rsa">
+    <h2>Asymmetric (RSA)</h2>
+    <button id="genRSA">Generate RSA Keypair</button>
+    <label>Public Key:</label>
+    <textarea id="publicKey" placeholder="Public key PEM..."></textarea>
+    <label>Private Key:</label>
+    <textarea id="privateKey" placeholder="Private key PEM..."></textarea>
+    <label>Plaintext:</label>
+    <textarea id="rsaPlain" placeholder="Text to encrypt..."></textarea>
+    <button id="encryptRSA">Encrypt with Public Key</button>
+    <label>Ciphertext:</label>
+    <textarea id="rsaCipher" placeholder="RSA ciphertext (Base64)..."></textarea>
+    <button id="decryptRSA">Decrypt with Private Key</button>
+    <label>Decrypted Text:</label>
+    <textarea id="rsaDecrypted" placeholder="Decrypted text..."></textarea>
+  </section>
+
+  <!-- CDN scripts -->
   <script src="https://unpkg.com/steganography.js@1.1.0/dist/steganography.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
   <script src="https://unpkg.com/openpgp@5.7.0/dist/openpgp.min.js"></script>
   <script>
-    function handleFileSelect(evt) {
-      const original = document.getElementById("img"),
-            stegoEl   = document.getElementById("cover"),
-            textarea  = document.getElementById("text"),
-            messageEl = document.getElementById("message"),
-            capacity  = document.getElementById("capacity");
-      const files = evt.target.files;
-      if (!files || !files[0]) return;
-      const f = files[0];
-      if (!f.type.match('image.*')) return;
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        original.src = e.target.result;
-        stegoEl.classList.add('invisible');
-        textarea.value = '';
-        messageEl.textContent = '';
-        document.getElementById('message-container').classList.add('invisible');
-        updateCapacity();
+    // — LSB Steganography —
+    const steg = window.steganography || window.stegano || window.steg;
+    document.getElementById('encodeBtn').addEventListener('click', () => {
+      const file = document.getElementById('carrierInput').files[0];
+      const msg = document.getElementById('secretMsg').value;
+      if (!file || !msg) return alert('Select an image and enter a message');
+      const fr = new FileReader();
+      fr.onload = () => {
+        const dataURL = steg.encode(msg, fr.result);
+        const [header, base64] = dataURL.split(',');
+        const mime = header.match(/:(.*?);/)[1];
+        const binary = atob(base64);
+        const arr = new Uint8Array(binary.length);
+        for (let i = 0; i < binary.length; i++) {
+          arr[i] = binary.charCodeAt(i);
+        }
+        const blob = new Blob([arr], { type: mime });
+        const url = URL.createObjectURL(blob);
+        const link = document.getElementById('downloadLink');
+        link.href = url;
+        link.download = 'stego.png';
+        link.textContent = '⬇️ Download stego.png';
+        link.style.display = 'block';
       };
-      reader.readAsDataURL(f);
-    }
+      fr.readAsDataURL(file);
+    });
 
-    function copyText() {
-      const messageEl = document.getElementById("message");
-      const text = messageEl.innerText;
-      const textArea = document.createElement('textarea');
-      textArea.value = text;
-      document.body.appendChild(textArea);
-      textArea.select();
-      document.execCommand('copy');
-      document.body.removeChild(textArea);
-      document.getElementById('copy').innerText = 'Copied!';
-    }
+    document.getElementById('decodeBtn').addEventListener('click', () => {
+      const file = document.getElementById('stegoInput').files[0];
+      if (!file) return alert('Select a stego image');
+      const fr = new FileReader();
+      fr.onload = () => {
+        const hidden = steg.decode(fr.result);
+        document.getElementById('decoded').textContent = hidden || '(no message found)';
+      };
+      fr.readAsDataURL(file);
+    });
 
-    function hide() {
-      const img = document.getElementById("img"),
-            cover = document.getElementById("cover"),
-            textarea = document.getElementById("text"),
-            download = document.getElementById("download");
-      if (!img.src || !textarea.value) return;
-      cover.src = steg.encode(textarea.value, img.src);
-      cover.classList.remove('invisible');
-      updateCapacity();
-      download.href = cover.src.replace("image/png", "image/octet-stream");
-    }
+    // — Symmetric Encryption —
+    document.getElementById('encryptSym').addEventListener('click', () => {
+      const algo = document.getElementById('symAlgo').value;
+      const key = document.getElementById('symKey').value;
+      const txt = document.getElementById('plainText').value;
+      const fn = algo === 'AES' ? CryptoJS.AES.encrypt : CryptoJS.TripleDES.encrypt;
+      document.getElementById('cipherText').value = fn(txt, key).toString();
+    });
+    document.getElementById('decryptSym').addEventListener('click', () => {
+      const algo = document.getElementById('symAlgo').value;
+      const key = document.getElementById('symKey').value;
+      const ct = document.getElementById('cipherText').value;
+      const fn = algo === 'AES' ? CryptoJS.AES.decrypt : CryptoJS.TripleDES.decrypt;
+      document.getElementById('decryptedText').value = fn(ct, key).toString(CryptoJS.enc.Utf8);
+    });
 
-    function read() {
-      const img = document.getElementById("img"),
-            messageEl = document.getElementById("message"),
-            textarea = document.getElementById("text");
-      if (!img.src) return;
-      const hidden = steg.decode(img.src);
-      if (hidden) {
-        messageEl.textContent = hidden;
-        textarea.value = hidden;
-        document.getElementById('message-container').classList.remove('invisible');
-        updateCapacity();
-      }
-    }
+    // — Hashing —
+    document.getElementById('doHash').addEventListener('click', () => {
+      const algo = document.getElementById('hashAlgo').value;
+      const txt = document.getElementById('hashInput').value;
+      const fn = algo === 'SHA256' ? CryptoJS.SHA256 : CryptoJS.SHA3;
+      document.getElementById('hashOutput').value = fn(txt).toString();
+    });
 
-    function updateCapacity() {
-      const img = document.getElementById('img'),
-            textarea = document.getElementById('text'),
-            capEl = document.getElementById('capacity');
-      if (!img.src) {
-        capEl.textContent = '(0/0 chars)';
-        return;
-      }
-      const max = steg.getHidingCapacity(img);
-      const used = textarea.value.length;
-      capEl.textContent = `(${used}/${max} chars)`;
-    }
-
-    window.onload = function(){
-      document.getElementById('file').addEventListener('change', handleFileSelect, false);
-      document.getElementById('hide').addEventListener('click', hide, false);
-      document.getElementById('read').addEventListener('click', read, false);
-      document.getElementById('text').addEventListener('keyup', updateCapacity, false);
-      document.getElementById('copy').addEventListener('click', copyText, false);
-      updateCapacity();
-    };
+    // — Asymmetric (RSA) —
+    let rsaPriv, rsaPub;
+    document.getElementById('genRSA').addEventListener('click', async () => {
+      const key = await openpgp.generateKey({ type: 'rsa', rsaBits: 2048, userIDs: [{ name: 'User', email: '' }] });
+      rsaPriv = key.privateKey;
+      rsaPub = key.publicKey;
+      document.getElementById('publicKey').value  = rsaPub;
+      document.getElementById('privateKey').value = rsaPriv;
+    });
+    document.getElementById('encryptRSA').addEventListener('click', async () => {
+      const plaintext = document.getElementById('rsaPlain').value;
+      const encrypted = await openpgp.encrypt({
+        message: openpgp.Message.fromText(plaintext),
+        encryptionKeys: await openpgp.readKey({ armoredKey: rsaPub })
+      });
+      document.getElementById('rsaCipher').value = encrypted;
+    });
+    document.getElementById('decryptRSA').addEventListener('click', async () => {
+      const encrypted = document.getElementById('rsaCipher').value;
+      const message   = await openpgp.readMessage({ armoredMessage: encrypted });
+      const { data: decrypted } = await openpgp.decrypt({
+        message,
+        decryptionKeys: await openpgp.readPrivateKey({ armoredKey: rsaPriv })
+      });
+      document.getElementById('rsaDecrypted').value = decrypted;
+    });
   </script>
 </body>
 </html>
