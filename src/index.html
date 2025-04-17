@@ -8,9 +8,9 @@
     body { font-family: sans-serif; padding: 1rem; max-width: 800px; margin: auto; }
     h1 { text-align: center; }
     section { border: 1px solid #ddd; padding: 1rem; margin-bottom: 1rem; border-radius: 4px; }
-    label, input, select, button, a { display: block; width: 100%; margin: .5rem 0; }
-    button, a { cursor: pointer; text-align: center; padding: .5rem; background: #0288d1; color: white; border: none; border-radius: 4px; text-decoration: none; }
-    a { background: none; color: #0288d1; padding: 0; margin: .5rem 0; }
+    label, input, select, textarea, button, a { display: block; width: 100%; margin: .5rem 0; }
+    button, a.button { cursor: pointer; background: #0288d1; color: white; border: none; padding: .5rem; text-decoration: none; text-align: center; border-radius: 4px; }
+    a.download { background: none; color: #0288d1; padding: 0; margin: .5rem 0; }
   </style>
 </head>
 <body>
@@ -19,17 +19,15 @@
   <!-- LSB Steganography -->
   <section id="stego">
     <h2>LSB Steganography</h2>
-    <label>Carrier Image:</label>
-    <input type="file" id="carrierInput" accept="image/*" />
-    <label>Secret Message:</label>
-    <input type="text" id="secretMsg" placeholder="Enter your secret" />
-    <button id="encodeBtn">Encode & Download</button>
-    <a id="downloadLink" style="display:none;"></a>
+    <p>Skip first <strong>100 bytes</strong> and embed every <strong>8th bit</strong> (L = 8).</p>
+    <label>Carrier File:</label>
+    <input type="file" id="carrierInput" />
+    <label>Message File to Hide:</label>
+    <input type="file" id="messageInput" />
+    <button id="encodeBtn" class="button">Embed & Download Stego File</button>
+    <a id="downloadLink" class="download" style="display:none"></a>
     <hr/>
-    <label>Stego Image:</label>
-    <input type="file" id="stegoInput" accept="image/*" />
-    <button id="decodeBtn">Decode Secret</button>
-    <p id="decoded"></p>
+    <button id="decodeBtn" class="button">Extract Hidden File from Stego</button>
   </section>
 
   <!-- Symmetric Encryption -->
@@ -44,18 +42,18 @@
     <input type="password" id="symKey" placeholder="Password / Passphrase" />
     <label>File to Encrypt:</label>
     <input type="file" id="symFile" />
-    <button id="encryptSym">Encrypt File</button>
-    <a id="symDownloadLink" style="display:none;"></a>
+    <button id="encryptSym" class="button">Encrypt File</button>
+    <a id="symDownloadLink" class="download" style="display:none"></a>
     <hr/>
-    <label>Encrypted File:</label>
+    <label>File to Decrypt:</label>
     <input type="file" id="symEncryptedFile" />
-    <button id="decryptSym">Decrypt File</button>
-    <a id="symDecryptLink" style="display:none;"></a>
+    <button id="decryptSym" class="button">Decrypt File</button>
+    <a id="symDecryptLink" class="download" style="display:none"></a>
   </section>
 
   <!-- Hashing -->
   <section id="hashing">
-    <h2>Hashing (SHA-256 / SHA-3)</n    </h2>
+    <h2>Hashing (SHA-256 / SHA-3)</h2>
     <label>Algorithm:</label>
     <select id="hashAlgo">
       <option value="SHA256">SHA-256</option>
@@ -63,152 +61,168 @@
     </select>
     <label>File to Hash:</label>
     <input type="file" id="hashFile" />
-    <button id="doHash">Compute Hash</button>
+    <button id="doHash" class="button">Compute Hash</button>
     <label>Hash Output (hex):</label>
     <textarea id="hashOutput" readonly></textarea>
   </section>
 
-  <!-- RSA Asymmetric -->
+  <!-- Asymmetric RSA -->
   <section id="rsa">
     <h2>Asymmetric RSA (2048-bit)</h2>
-    <button id="genRSA">Generate Keypair</button>
+    <button id="genRSA" class="button">Generate Keypair</button>
     <label>Public Key (PEM):</label>
     <textarea id="publicKey" readonly></textarea>
     <label>Private Key (PEM):</label>
     <textarea id="privateKey" readonly></textarea>
     <label>File to Encrypt:</label>
     <input type="file" id="rsaFile" />
-    <button id="encryptRSA">Encrypt File</button>
-    <a id="rsaDownloadLink" style="display:none;"></a>
+    <button id="encryptRSA" class="button">Encrypt File</button>
+    <a id="rsaDownloadLink" class="download" style="display:none"></a>
     <hr/>
-    <label>Encrypted File:</label>
+    <label>Encrypted File to Decrypt:</label>
     <input type="file" id="rsaEncryptedFile" />
-    <button id="decryptRSA">Decrypt File</button>
-    <a id="rsaDecryptLink" style="display:none;"></a>
+    <button id="decryptRSA" class="button">Decrypt File</button>
+    <a id="rsaDecryptLink" class="download" style="display:none"></a>
   </section>
 
-  <!-- CDN scripts -->
+  <!-- Libraries -->
   <script src="https://unpkg.com/steganography.js@1.1.0/dist/steganography.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
   <script src="https://unpkg.com/openpgp@5.7.0/dist/openpgp.min.js"></script>
   <script>
-    // Helper to download Blob
-    function downloadBlob(blob, filename, linkId) {
-      const url = URL.createObjectURL(blob);
-      const link = document.getElementById(linkId);
-      link.href = url;
-      link.download = filename;
-      link.textContent = `⬇️ Download ${filename}`;
-      link.style.display = 'block';
+    const SKIP_BYTES = 100;
+    const STEP_BITS  = 8;
+    // Buffer <-> Bits
+    function bufferToBits(buf) {
+      const bytes = new Uint8Array(buf), bits = [];
+      bytes.forEach(b => {
+        for(let i=7;i>=0;i--) bits.push((b>>i)&1);
+      });
+      return bits;
     }
-
-    // — LSB Steganography —
-    const steg = window.steganography || window.stegano || window.steg;
-    document.getElementById('encodeBtn').onclick = () => {
-      const file = document.getElementById('carrierInput').files[0];
-      const msg  = document.getElementById('secretMsg').value;
-      if (!file || !msg) return alert('Select an image and enter a message');
-      const fr = new FileReader();
-      fr.onload = () => {
-        const dataURL = steg.encode(msg, fr.result);
-        const [header, base64] = dataURL.split(',');
-        const mime = header.match(/:(.*?);/)[1];
-        const raw = atob(base64);
-        const arr = new Uint8Array(raw.length);
-        for (let i = 0; i < raw.length; i++) arr[i] = raw.charCodeAt(i);
-        const blob = new Blob([arr], { type: mime });
-        downloadBlob(blob, 'stego.png', 'downloadLink');
+    function bitsToBuffer(bits) {
+      const len = Math.floor(bits.length/8), bytes = new Uint8Array(len);
+      for(let i=0;i<len;i++){
+        let byte=0;
+        for(let j=0;j<8;j++) byte = (byte<<1)|bits[i*8+j];
+        bytes[i]=byte;
+      }
+      return bytes.buffer;
+    }
+    function embedBuffers(carrierBuf, messageBuf) {
+      const cBits = bufferToBits(carrierBuf), mBits = bufferToBits(messageBuf);
+      const skip = SKIP_BYTES*8;
+      mBits.forEach((bit,i)=>{
+        const pos = skip + i*STEP_BITS;
+        if(pos<cBits.length) cBits[pos]=bit;
+      });
+      return bitsToBuffer(cBits);
+    }
+    function extractBuffer(stegoBuf) {
+      const bits = bufferToBits(stegoBuf), skip=SKIP_BYTES*8, out=[];
+      for(let pos=skip;pos<bits.length; pos+=STEP_BITS) out.push(bits[pos]);
+      return bitsToBuffer(out);
+    }
+    function downloadBuffer(buf,name) {
+      const blob=new Blob([buf],{type:'application/octet-stream'});
+      const url=URL.createObjectURL(blob);
+      const link=document.getElementById('downloadLink');
+      link.href=url; link.download=name;
+      link.textContent=`⬇️ Download ${name}`;
+      link.style.display='block';
+    }
+    // Stego events
+    document.getElementById('encodeBtn').onclick=()=>{
+      const c=document.getElementById('carrierInput').files[0], m=document.getElementById('messageInput').files[0];
+      if(!c||!m)return alert('Select both files');
+      const frC=new FileReader();
+      frC.onload=()=>{
+        const carrierBuf=frC.result;
+        const frM=new FileReader();
+        frM.onload=()=>{
+          const msgBuf=frM.result;
+          const stegoBuf=embedBuffers(carrierBuf,msgBuf);
+          downloadBuffer(stegoBuf,'stego.bin');
+        };
+        frM.readAsArrayBuffer(m);
       };
-      fr.readAsDataURL(file);
+      frC.readAsArrayBuffer(c);
     };
-    document.getElementById('decodeBtn').onclick = () => {
-      const file = document.getElementById('stegoInput').files[0];
-      if (!file) return alert('Select a stego image');
-      const fr = new FileReader();
-      fr.onload = () => {
-        const hidden = steg.decode(fr.result);
-        document.getElementById('decoded').textContent = hidden || '(no message found)';
-      };
-      fr.readAsDataURL(file);
+    document.getElementById('decodeBtn').onclick=()=>{
+      const c=document.getElementById('carrierInput').files[0];
+      if(!c)return alert('Upload stego as carrier');
+      const fr=new FileReader();
+      fr.onload=()=>{ const buf=extractBuffer(fr.result); downloadBuffer(buf,'extracted.bin'); };
+      fr.readAsArrayBuffer(c);
     };
-
-    // — Symmetric Encryption —
-    document.getElementById('encryptSym').onclick = () => {
-      const algo = document.getElementById('symAlgo').value;
-      const key  = document.getElementById('symKey').value;
-      const file = document.getElementById('symFile').files[0];
-      if (!file || !key) return alert('Select file and enter passphrase');
-      const fr = new FileReader();
-      fr.onload = () => {
-        const wordArr = CryptoJS.lib.WordArray.create(fr.result);
-        const fn = algo === 'AES' ? CryptoJS.AES.encrypt : CryptoJS.TripleDES.encrypt;
-        const ct = fn(wordArr, key).toString();
-        const blob = new Blob([ct], { type: 'application/octet-stream' });
-        downloadBlob(blob, 'sym_encrypted.txt', 'symDownloadLink');
-      };
-      fr.readAsArrayBuffer(file);
+    // Symmetric events
+    function downloadSym(blob,name,id){
+      const url=URL.createObjectURL(blob);
+      const link=document.getElementById(id);
+      link.href=url; link.download=name;
+      link.textContent=`⬇️ Download ${name}`; link.style.display='block';
+    }
+    document.getElementById('encryptSym').onclick=()=>{
+      const algo=document.getElementById('symAlgo').value, key=document.getElementById('symKey').value;
+      const f=document.getElementById('symFile').files[0]; if(!f||!key)return alert('Select file & key');
+      const fr=new FileReader(); fr.onload=()=>{
+        const wa=CryptoJS.lib.WordArray.create(fr.result);
+        const fn=algo==='AES'?CryptoJS.AES.encrypt:CryptoJS.TripleDES.encrypt;
+        const ct=fn(wa,key).toString();
+        downloadSym(new Blob([ct],{type:'application/octet-stream'}),'sym_encrypted.txt','symDownloadLink');
+      }; fr.readAsArrayBuffer(f);
     };
-    document.getElementById('decryptSym').onclick = () => {
-      const algo = document.getElementById('symAlgo').value;
-      const key  = document.getElementById('symKey').value;
-      const file = document.getElementById('symEncryptedFile').files[0];
-      if (!file || !key) return alert('Select encrypted file and passphrase');
-      const fr = new FileReader();
-      fr.onload = () => {
-        const ct = new TextDecoder().decode(fr.result);
-        const fn = algo === 'AES' ? CryptoJS.AES.decrypt : CryptoJS.TripleDES.decrypt;
-        const pt = fn(ct, key).toString(CryptoJS.enc.Utf8);
-        const blob = new Blob([pt], { type: 'application/octet-stream' });
-        downloadBlob(blob, 'sym_decrypted.txt', 'symDecryptLink');
-      };
-      fr.readAsArrayBuffer(file);
+    document.getElementById('decryptSym').onclick=()=>{
+      const algo=document.getElementById('symAlgo').value, key=document.getElementById('symKey').value;
+      const f=document.getElementById('symEncryptedFile').files[0]; if(!f||!key)return alert('Select encrypted & key');
+      const fr=new FileReader(); fr.onload=()=>{
+        const ct=new TextDecoder().decode(fr.result);
+        const fn=algo==='AES'?CryptoJS.AES.decrypt:CryptoJS.TripleDES.decrypt;
+        const pt=fn(ct,key).toString(CryptoJS.enc.Utf8);
+        downloadSym(new Blob([pt],{type:'application/octet-stream'}),'sym_decrypted.txt','symDecryptLink');
+      }; fr.readAsArrayBuffer(f);
     };
-
-    // — Hashing —
-    document.getElementById('doHash').onclick = () => {
-      const algo = document.getElementById('hashAlgo').value;
-      const file = document.getElementById('hashFile').files[0];
-      if (!file) return alert('Select a file to hash');
-      const fr = new FileReader();
-      fr.onload = () => {
-        const wordArr = CryptoJS.lib.WordArray.create(fr.result);
-        const fn = algo === 'SHA256' ? CryptoJS.SHA256 : CryptoJS.SHA3;
-        document.getElementById('hashOutput').value = fn(wordArr).toString();
-      };
-      fr.readAsArrayBuffer(file);
+    // Hash events
+    document.getElementById('doHash').onclick=()=>{
+      const algo=document.getElementById('hashAlgo').value;
+      const f=document.getElementById('hashFile').files[0]; if(!f)return alert('Select file');
+      const fr=new FileReader(); fr.onload=()=>{
+        const wa=CryptoJS.lib.WordArray.create(fr.result);
+        const fn=algo==='SHA256'?CryptoJS.SHA256:CryptoJS.SHA3;
+        document.getElementById('hashOutput').value=fn(wa).toString();
+      }; fr.readAsArrayBuffer(f);
     };
-
-    // — RSA Asymmetric —
-    let rsaPriv, rsaPub;
-    document.getElementById('genRSA').onclick = async () => {
-      const key = await openpgp.generateKey({ type: 'rsa', rsaBits: 2048, userIDs: [{ name: 'User', email: '' }] });
-      rsaPriv = key.privateKey; rsaPub = key.publicKey;
-      document.getElementById('publicKey').value  = rsaPub;
-      document.getElementById('privateKey').value = rsaPriv;
+    // RSA events
+    let rsaPriv,rsaPub;
+    document.getElementById('genRSA').onclick=async()=>{
+      const key=await openpgp.generateKey({type:'rsa',rsaBits:2048,userIDs:[{name:'User',email:''}]});
+      rsaPriv=key.privateKey; rsaPub=key.publicKey;
+      document.getElementById('publicKey').value=rsaPub;
+      document.getElementById('privateKey').value=rsaPriv;
     };
-    document.getElementById('encryptRSA').onclick = async () => {
-      const file = document.getElementById('rsaFile').files[0];
-      if (!file || !rsaPub) return alert('Select file and generate keypair first');
-      const fr = new FileReader();
-      fr.onload = async () => {
-        const message = await openpgp.createMessage({ binary: new Uint8Array(fr.result) });
-        const encrypted = await openpgp.encrypt({ message, encryptionKeys: await openpgp.readKey({ armoredKey: rsaPub }) });
-        const blob = new Blob([encrypted], { type: 'application/octet-stream' });
-        downloadBlob(blob, 'rsa_encrypted.asc', 'rsaDownloadLink');
-      };
-      fr.readAsArrayBuffer(file);
+    function downloadRSA(data,name,id){
+      const blob=new Blob([data],{type:'application/octet-stream'});
+      const url=URL.createObjectURL(blob);
+      const link=document.getElementById(id);
+      link.href=url; link.download=name;
+      link.textContent=`⬇️ Download ${name}`; link.style.display='block';
+    }
+    document.getElementById('encryptRSA').onclick=async()=>{
+      const f=document.getElementById('rsaFile').files[0]; if(!f||!rsaPub)return alert('Select file & generate keys');
+      const fr=new FileReader(); fr.onload=async()=>{
+        const msg=await openpgp.createMessage({binary:new Uint8Array(fr.result)});
+        const encrypted=await openpgp.encrypt({message:msg,encryptionKeys:await openpgp.readKey({armoredKey:rsaPub})});
+        downloadRSA(encrypted,'rsa_encrypted.asc','rsaDownloadLink');
+      }; fr.readAsArrayBuffer(f);
     };
-    document.getElementById('decryptRSA').onclick = async () => {
-      const file = document.getElementById('rsaEncryptedFile').files[0];
-      if (!file || !rsaPriv) return alert('Select encrypted file and generate keypair first');
-      const fr = new FileReader();
-      fr.onload = async () => {
-        const message = await openpgp.readMessage({ armoredMessage: new TextDecoder().decode(fr.result) });
-        const { data: decrypted } = await openpgp.decrypt({ message, decryptionKeys: await openpgp.readPrivateKey({ armoredKey: rsaPriv }) });
-        const blob = new Blob([decrypted], { type: 'application/octet-stream' });
-        downloadBlob(blob, 'rsa_decrypted.bin', 'rsaDecryptLink');
-      };
-      fr.readAsArrayBuffer(file);
+    document.getElementById('decryptRSA').onclick=async()=>{
+      const f=document.getElementById('rsaEncryptedFile').files[0]; if(!f||!rsaPriv)return alert('Select encrypted & generate keys');
+      const fr=new FileReader(); fr.onload=async()=>{
+        const raw=new TextDecoder().decode(fr.result);
+        const msg=await openpgp.readMessage({armoredMessage:raw});
+        const {data:decrypted}=await openpgp.decrypt({message:msg,decryptionKeys:await openpgp.readPrivateKey({armoredKey:rsaPriv})});
+        downloadRSA(decrypted,'rsa_decrypted.bin','rsaDecryptLink');
+      }; fr.readAsArrayBuffer(f);
     };
   </script>
 </body>
