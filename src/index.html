@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Stegonography and Cryptography Assignment</title>
+  <title>Steganography and Cryptography Assignment</title>
   <style>
     body { font-family: sans-serif; padding: 1rem; max-width: 800px; margin: auto; }
     h1 { text-align: center; }
@@ -13,7 +13,7 @@
   </style>
 </head>
 <body>
-  <h1>Stegonography and Cryptography Assignment 2.0</h1>
+  <h1>Steganography and Cryptography Assignment 3.0</h1>
 
   <!-- LSB Steganography -->
   <section id="stego">
@@ -97,13 +97,23 @@
       const fr = new FileReader();
       fr.onload = () => {
         const dataURL = steg.encode(msg, fr.result);
-        // Create a temporary link to trigger download
+        // Convert DataURL to Blob for reliable download
+        const [header, base64] = dataURL.split(',');
+        const mime = header.match(/:(.*?);/)[1];
+        const binary = atob(base64);
+        const array = new Uint8Array(binary.length);
+        for (let i = 0; i < binary.length; i++) {
+          array[i] = binary.charCodeAt(i);
+        }
+        const blob = new Blob([array], { type: mime });
+        const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
-        a.href = dataURL;
+        a.href = url;
         a.download = 'stego.png';
         document.body.appendChild(a);
         a.click();
         document.body.removeChild(a);
+        URL.revokeObjectURL(url);
       };
       fr.readAsDataURL(file);
     });
