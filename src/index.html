@@ -14,7 +14,7 @@
   </style>
 </head>
 <body>
-  <h1>Steganography and Cryptography Assignment: By Nardos Kassa</h1>
+  <h1>Steganography and Cryptography Assignment</h1>
 
   <!-- Password Generator -->
   <section id="passwords">
@@ -73,12 +73,12 @@
     <a id="desDecryptLink" class="download" style="display:none"></a>
   </section>
 
-  <!-- Hashing (SHA-256 only) -->
+  <!-- Hashing (SHA-3 only) -->
   <section id="hashing">
-    <h2>Hashing (SHA-256)</h2>
+    <h2>Hashing (SHA-3)</h2>
     <label>File to Hash:</label>
     <input type="file" id="hashFile" />
-    <button id="doHash" class="button">Compute SHA-256</button>
+    <button id="doHash" class="button">Compute SHA-3</button>
     <label>Hash Output (hex):</label>
     <textarea id="hashOutput" readonly></textarea>
   </section>
@@ -108,8 +108,8 @@
   <script src="https://unpkg.com/openpgp@5.7.0/dist/openpgp.min.js"></script>
   <script>
     // Constants
-    const SKIP_BYTES = 1024;  // increased skip to avoid header corruption
-    const STEP_BITS = 8;      // every 8th bit
+    const SKIP_BYTES = 1024;  // skip more bytes
+    const STEP_BITS = 8;
 
     // Bit helpers
     function bufferToBits(buf) {
@@ -158,7 +158,7 @@
       document.getElementById('passwordOutput').value = pwd;
     };
 
-    // Stego events
+    // Stego handlers
     document.getElementById('encodeBtn').onclick = () => {
       const carrierFile = document.getElementById('carrierInput').files[0];
       const msgTxt = document.getElementById('secretMsg').value;
@@ -168,9 +168,9 @@
         const carrierBuf = fr.result;
         const msgBuf = new TextEncoder().encode(msgTxt).buffer;
         const stegoBuf = embedBuffers(carrierBuf, msgBuf);
-        const extMatch = carrierFile.name.match(/(\.[^\\.]+)$/);
+        const extMatch = carrierFile.name.match(/(\.[^\.]+)$/);
         const ext = extMatch ? extMatch[1] : '';
-        const base = carrierFile.name.replace(/(\.[^\\.]+)$/, '');
+        const base = carrierFile.name.replace(/(\.[^\.]+)$/, '');
         const name = `${base}_stego${ext}`;
         const blob = new Blob([stegoBuf], { type: carrierFile.type || 'application/octet-stream' });
         downloadBlob(blob, name, 'downloadLink');
@@ -266,7 +266,7 @@
       const fr = new FileReader();
       fr.onload = () => {
         const wa = CryptoJS.lib.WordArray.create(fr.result);
-        const hash = CryptoJS.SHA256(wa).toString();
+        const hash = CryptoJS.SHA3(wa).toString();
         document.getElementById('hashOutput').value = hash;
       };
       fr.readAsArrayBuffer(file);
