@@ -1,157 +1,25 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Stego + Crypto Toolkit</title>
+  <meta charset="UTF-8">
+  <title>Stego + Crypto Toolkit</title>
   <style>
     body { font-family: sans-serif; padding: 1rem; max-width: 800px; margin: auto; }
-    h1 { text-align: center; }
     section { border: 1px solid #ddd; padding: 1rem; margin-bottom: 1rem; border-radius: 4px; }
-    input, textarea, select, button { display: block; width: 100%; margin: 0.5rem 0; }
-    button { cursor: pointer; }
-    a { word-break: break-all; }
+    input, textarea, select, button { display: block; width: 100%; margin: .5rem 0; }
   </style>
 </head>
 <body>
-  <h1>Stego + Crypto Toolkit</h1>
+  <h1>Stego + Crypto Toolkit</h1>
 
-  <!-- LSB Steganography -->
-  <section id="stego">
-    <h2>LSB Steganography</h2>
-    <label>Carrier Image:</label>
-    <input type="file" id="carrierInput" accept="image/*" />
-    <label>Secret Message:</label>
-    <input type="text" id="secretMsg" placeholder="Enter your secret" />
-    <button id="encodeBtn">Encode & Download</button>
-    <a id="downloadLink" style="display:block; margin-top:0.5rem;"></a>
-    <hr />
-    <label>Stego Image:</label>
-    <input type="file" id="stegoInput" accept="image/*" />
-    <button id="decodeBtn">Decode Secret</button>
-    <p id="decoded"></p>
-  </section>
+  <!-- STEGO, SYMM, HASH, RSA sections will go here -->
 
-  <!-- Symmetric Encryption -->
-  <section id="symmetric">
-    <h2>Symmetric Encryption</h2>
-    <label>Algorithm:</label>
-    <select id="symAlgo">
-      <option value="AES">AES</option>
-      <option value="3DES">3DES</option>
-    </select>
-    <label>Passphrase:</label>
-    <input type="password" id="symKey" placeholder="Password / Passphrase" />
-    <label>Plaintext:</label>
-    <textarea id="plainText" placeholder="Enter plaintext..."></textarea>
-    <button id="encryptSym">Encrypt</button>
-    <label>Ciphertext:</label>
-    <textarea id="cipherText" placeholder="Ciphertext output..."></textarea>
-    <button id="decryptSym">Decrypt</button>
-    <label>Decrypted Text:</label>
-    <textarea id="decryptedText" placeholder="Decrypted text..."></textarea>
-  </section>
-
-  <!-- Hashing -->
-  <section id="hashing">
-    <h2>Hashing</h2>
-    <label>Algorithm:</label>
-    <select id="hashAlgo">
-      <option value="SHA256">SHA-256</option>
-      <option value="SHA3">SHA-3</option>
-    </select>
-    <label>Message:</label>
-    <textarea id="hashInput" placeholder="Message to hash..."></textarea>
-    <button id="doHash">Hash it</button>
-    <label>Hash Output:</label>
-    <textarea id="hashOutput" placeholder="Hash output..."></textarea>
-  </section>
-
-  <!-- Asymmetric RSA -->
-  <section id="rsa">
-    <h2>Asymmetric (RSA)</h2>
-    <button id="genRSA">Generate RSA Keypair</button>
-    <label>Public Key:</label>
-    <textarea id="publicKey" placeholder="Public key PEM..."></textarea>
-    <label>Private Key:</label>
-    <textarea id="privateKey" placeholder="Private key PEM..."></textarea>
-    <label>Plaintext:</label>
-    <textarea id="rsaPlain" placeholder="Text to encrypt..."></textarea>
-    <button id="encryptRSA">Encrypt with Public Key</button>
-    <label>Ciphertext:</label>
-    <textarea id="rsaCipher" placeholder="RSA ciphertext (Base64)..."></textarea>
-    <button id="decryptRSA">Decrypt with Private Key</button>
-    <label>Decrypted Text:</label>
-    <textarea id="rsaDecrypted" placeholder="Decrypted text..."></textarea>
-  </section>
-
-  <!-- External Libraries -->
+  <!-- CDN scripts -->
   <script src="https://unpkg.com/steganography.js@1.1.0/dist/steganography.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
   <script src="https://unpkg.com/openpgp@5.7.0/dist/openpgp.min.js"></script>
-
   <script>
-    // — LSB Steganography —
-    const steg = window.steganography || window.stegano || window.steg;
-    document.getElementById('encodeBtn').addEventListener('click', () => {
-      const file = document.getElementById('carrierInput').files[0];
-      const msg = document.getElementById('secretMsg').value;
-      if (!file || !msg) return alert('Select an image and enter a message');
-      const fr = new FileReader();
-      fr.onload = () => {
-        const dataURL = steg.encode(msg, fr.result);
-        const link = document.getElementById('downloadLink');
-        link.href = dataURL;
-        link.download = 'stego.png';
-        link.textContent = '⬇️ Download stego.png';
-      };
-      fr.readAsDataURL(file);
-    });
-    document.getElementById('decodeBtn').addEventListener('click', () => {
-      const file = document.getElementById('stegoInput').files[0];
-      if (!file) return alert('Select a stego image');
-      const fr = new FileReader();
-      fr.onload = () => {
-        const hidden = steg.decode(fr.result);
-        document.getElementById('decoded').textContent = hidden || '(no message found)';
-      };
-      fr.readAsDataURL(file);
-    });
-
-    // — Symmetric Encryption —
-    document.getElementById('encryptSym').addEventListener('click', () => {
-      const algo = document.getElementById('symAlgo').value;
-      const key = document.getElementById('symKey').value;
-      const txt = document.getElementById('plainText').value;
-      const fn = algo === 'AES' ? CryptoJS.AES.encrypt : CryptoJS.TripleDES.encrypt;
-      const ct = fn(txt, key).toString();
-      document.getElementById('cipherText').value = ct;
-    });
-    document.getElementById('decryptSym').addEventListener('click', () => {
-      const algo = document.getElementById('symAlgo').value;
-      const key = document.getElementById('symKey').value;
-      const ct = document.getElementById('cipherText').value;
-      const fn = algo === 'AES' ? CryptoJS.AES.decrypt : CryptoJS.TripleDES.decrypt;
-      const pt = fn(ct, key).toString(CryptoJS.enc.Utf8);
-      document.getElementById('decryptedText').value = pt;
-    });
-
-    // — Hashing —
-    document.getElementById('doHash').addEventListener('click', () => {
-      const algo = document.getElementById('hashAlgo').value;
-      const txt = document.getElementById('hashInput').value;
-      const fn = algo === 'SHA256' ? CryptoJS.SHA256 : CryptoJS.SHA3;
-      document.getElementById('hashOutput').value = fn(txt).toString();
-    });
-
-    // — Asymmetric (RSA) —
-    let rsaPriv, rsaPub;
-    document.getElementById('genRSA').addEventListener('click', async () => {
-      const key = await openpgp.generateKey({
-        type: 'rsa', rsaBits: 2048,
-        userIDs: [{ name: 'User', email: '' }]
-      });
-      rsaPriv = key.privateKey;
-      rsaPub = key.publicKey;
-      document.getElementById('publicKey').value = rsaPub;
-      document.get
+    // later: your JS to wire up encode/decode/encrypt/decrypt…
+  </script>
+</body>
+</html>
