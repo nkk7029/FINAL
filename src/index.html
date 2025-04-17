@@ -3,18 +3,17 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Stego + Crypto Toolkit</title>
+  <title>Stegonography and Cryptography Assignment</title>
   <style>
     body { font-family: sans-serif; padding: 1rem; max-width: 800px; margin: auto; }
     h1 { text-align: center; }
     section { border: 1px solid #ddd; padding: 1rem; margin-bottom: 1rem; border-radius: 4px; }
     label, input, textarea, select, button { display: block; width: 100%; margin: .5rem 0; }
     button { cursor: pointer; }
-    a { word-break: break-all; }
   </style>
 </head>
 <body>
-  <h1>Stegonography and Crpytography Assignment</h1>
+  <h1>Stegonography and Cryptography Assignment</h1>
 
   <!-- LSB Steganography -->
   <section id="stego">
@@ -24,7 +23,6 @@
     <label>Secret Message:</label>
     <input type="text" id="secretMsg" placeholder="Enter your secret" />
     <button id="encodeBtn">Encode & Download</button>
-    <a id="downloadLink"></a>
     <hr/>
     <label>Stego Image:</label>
     <input type="file" id="stegoInput" accept="image/*" />
@@ -99,10 +97,13 @@
       const fr = new FileReader();
       fr.onload = () => {
         const dataURL = steg.encode(msg, fr.result);
-        const link = document.getElementById('downloadLink');
-        link.href = dataURL;
-        link.download = 'stego.png';
-        link.textContent = '⬇️ Download stego.png';
+        // Create a temporary link to trigger download
+        const a = document.createElement('a');
+        a.href = dataURL;
+        a.download = 'stego.png';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
       };
       fr.readAsDataURL(file);
     });
@@ -144,33 +145,22 @@
     // — Asymmetric (RSA) —
     let rsaPriv, rsaPub;
     document.getElementById('genRSA').addEventListener('click', async () => {
-      const key = await openpgp.generateKey({
-        type: 'rsa', rsaBits: 2048,
-        userIDs: [{ name: 'User', email: '' }]
-      });
-      rsaPriv = key.privateKey;
-      rsaPub = key.publicKey;
+      const key = await openpgp.generateKey({ type: 'rsa', rsaBits: 2048, userIDs: [{ name: 'User', email: '' }] });
+      rsaPriv = key.privateKey; rsaPub = key.publicKey;
       document.getElementById('publicKey').value = rsaPub;
       document.getElementById('privateKey').value = rsaPriv;
     });
     document.getElementById('encryptRSA').addEventListener('click', async () => {
       const plaintext = document.getElementById('rsaPlain').value;
-      const encrypted = await openpgp.encrypt({
-        message: openpgp.Message.fromText(plaintext),
-        encryptionKeys: await openpgp.readKey({ armoredKey: rsaPub })
-      });
+      const encrypted = await openpgp.encrypt({ message: openpgp.Message.fromText(plaintext), encryptionKeys: await openpgp.readKey({ armoredKey: rsaPub }) });
       document.getElementById('rsaCipher').value = encrypted;
     });
     document.getElementById('decryptRSA').addEventListener('click', async () => {
       const encrypted = document.getElementById('rsaCipher').value;
-      const message   = await openpgp.readMessage({ armoredMessage: encrypted });
-      const { data: decrypted } = await openpgp.decrypt({
-        message,
-        decryptionKeys: await openpgp.readPrivateKey({ armoredKey: rsaPriv })
-      });
+      const message = await openpgp.readMessage({ armoredMessage: encrypted });
+      const { data: decrypted } = await openpgp.decrypt({ message, decryptionKeys: await openpgp.readPrivateKey({ armoredKey: rsaPriv }) });
       document.getElementById('rsaDecrypted').value = decrypted;
     });
   </script>
 </body>
 </html>
-
