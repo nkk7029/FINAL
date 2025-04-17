@@ -14,7 +14,7 @@
   </style>
 </head>
 <body>
-  <h1>Steganography and Cryptography Assignment</h1>
+  <h1>Steganography and Cryptography Assignment: By Nardos Kassa</h1>
 
   <!-- Password Generator -->
   <section id="passwords">
@@ -27,7 +27,7 @@
   <!-- LSB Steganography -->
   <section id="stego">
     <h2>LSB Steganography</h2>
-    <p>Skip first <strong>100 bytes</strong> and embed every <strong>8th bit</strong> (L = 8).</p>
+    <p>Skip first <strong>1024 bytes</strong> and embed every <strong>8th bit</strong> (L = 8).</p>
     <label>Carrier File:</label>
     <input type="file" id="carrierInput" />
     <label>Message to Hide:</label>
@@ -83,7 +83,7 @@
     <textarea id="hashOutput" readonly></textarea>
   </section>
 
-  <!-- RSA Asymmetric -->
+  <!-- Asymmetric RSA -->
   <section id="rsa">
     <h2>Asymmetric RSA (2048-bit)</h2>
     <button id="genRSA" class="button">Generate Keypair</button>
@@ -107,10 +107,11 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
   <script src="https://unpkg.com/openpgp@5.7.0/dist/openpgp.min.js"></script>
   <script>
-    // Steganography constants
-    const SKIP_BYTES = 100;
-    const STEP_BITS = 8;
-    // Helpers: buffer <-> bits
+    // Constants
+    const SKIP_BYTES = 1024;  // increased skip to avoid header corruption
+    const STEP_BITS = 8;      // every 8th bit
+
+    // Bit helpers
     function bufferToBits(buf) {
       const bytes = new Uint8Array(buf), bits = [];
       bytes.forEach(b => { for (let i = 7; i >= 0; i--) bits.push((b >> i) & 1); });
@@ -137,6 +138,7 @@
       for (let pos = skip; pos < bits.length; pos += STEP_BITS) out.push(bits[pos]);
       return bitsToBuffer(out);
     }
+
     // Download helper
     function downloadBlob(blob, name, linkId) {
       const url = URL.createObjectURL(blob);
@@ -146,6 +148,7 @@
       link.textContent = `⬇️ Download ${name}`;
       link.style.display = 'block';
     }
+
     // Password generator
     document.getElementById('genPassword').onclick = () => {
       const length = 16;
@@ -154,34 +157,38 @@
       crypto.getRandomValues(new Uint32Array(length)).forEach(n => pwd += chars[n % chars.length]);
       document.getElementById('passwordOutput').value = pwd;
     };
+
     // Stego events
     document.getElementById('encodeBtn').onclick = () => {
-      const cFile = document.getElementById('carrierInput').files[0];
+      const carrierFile = document.getElementById('carrierInput').files[0];
       const msgTxt = document.getElementById('secretMsg').value;
-      if (!cFile || !msgTxt) return alert('Select carrier file and enter message');
+      if (!carrierFile || !msgTxt) return alert('Select carrier file and enter message');
       const fr = new FileReader();
       fr.onload = () => {
         const carrierBuf = fr.result;
         const msgBuf = new TextEncoder().encode(msgTxt).buffer;
         const stegoBuf = embedBuffers(carrierBuf, msgBuf);
-        const extMatch = cFile.name.match(/(\.[^\.]+)$/);
+        const extMatch = carrierFile.name.match(/(\.[^\\.]+)$/);
         const ext = extMatch ? extMatch[1] : '';
-        const base = cFile.name.replace(/(\.[^\.]+)$/, '');
+        const base = carrierFile.name.replace(/(\.[^\\.]+)$/, '');
         const name = `${base}_stego${ext}`;
-        downloadBlob(new Blob([stegoBuf], { type: cFile.type || 'application/octet-stream' }), name, 'downloadLink');
+        const blob = new Blob([stegoBuf], { type: carrierFile.type || 'application/octet-stream' });
+        downloadBlob(blob, name, 'downloadLink');
       };
-      fr.readAsArrayBuffer(cFile);
+      fr.readAsArrayBuffer(carrierFile);
     };
     document.getElementById('decodeBtn').onclick = () => {
-      const cFile = document.getElementById('carrierInput').files[0];
-      if (!cFile) return alert('Select stego file in carrier input');
+      const carrierFile = document.getElementById('carrierInput').files[0];
+      if (!carrierFile) return alert('Select stego file in carrier input');
       const fr = new FileReader();
       fr.onload = () => {
         const extractedBuf = extractBuffer(fr.result);
-        document.getElementById('decoded').textContent = new TextDecoder().decode(extractedBuf);
+        const msg = new TextDecoder().decode(extractedBuf);
+        document.getElementById('decoded').textContent = msg;
       };
-      fr.readAsArrayBuffer(cFile);
+      fr.readAsArrayBuffer(carrierFile);
     };
+
     // AES events
     document.getElementById('genAESKey').onclick = () => {
       const keyBytes = crypto.getRandomValues(new Uint8Array(32));
@@ -216,6 +223,7 @@
       };
       fr.readAsArrayBuffer(file);
     };
+
     // 3DES events
     document.getElementById('genDESKey').onclick = () => {
       const keyBytes = crypto.getRandomValues(new Uint8Array(24));
@@ -250,6 +258,7 @@
       };
       fr.readAsArrayBuffer(file);
     };
+
     // Hashing handler
     document.getElementById('doHash').onclick = () => {
       const file = document.getElementById('hashFile').files[0];
@@ -262,7 +271,36 @@
       };
       fr.readAsArrayBuffer(file);
     };
-    // RSA unchanged...
+
+    // RSA events
+    let rsaPriv, rsaPub;
+    document.getElementById('genRSA').onclick = async () => {
+      const key = await openpgp.generateKey({ type: 'rsa', rsaBits: 2048, userIDs: [{ name: 'User', email: '' }] });
+      rsaPriv = key.privateKey; rsaPub = key.publicKey;
+      document.getElementById('publicKey').value = rsaPub;
+      document.getElementById('privateKey').value = rsaPriv;
+    };
+    document.getElementById('encryptRSA').onclick = async () => {
+      const file = document.getElementById('rsaFile').files[0];
+      if (!file || !rsaPub) return alert('Select file and generate keys');
+      const fr = new FileReader(); fr.onload = async () => {
+        const message = await openpgp.createMessage({ binary: new Uint8Array(fr.result) });
+        const encrypted = await openpgp.encrypt({ message, encryptionKeys: await openpgp.readKey({ armoredKey: rsaPub }) });
+        downloadBlob(new Blob([encrypted], { type: 'application/octet-stream' }), file.name + '.asc', 'rsaDownloadLink');
+      };
+      fr.readAsArrayBuffer(file);
+    };
+    document.getElementById('decryptRSA').onclick = async () => {
+      const file = document.getElementById('rsaEncryptedFile').files[0];
+      if (!file || !rsaPriv) return alert('Select encrypted file and generate keys');
+      const fr = new FileReader(); fr.onload = async () => {
+        const raw = new TextDecoder().decode(fr.result);
+        const message = await openpgp.readMessage({ armoredMessage: raw });
+        const { data: decrypted } = await openpgp.decrypt({ message, decryptionKeys: await openpgp.readPrivateKey({ armoredKey: rsaPriv }) });
+        downloadBlob(new Blob([decrypted], { type: 'application/octet-stream' }), file.name.replace(/\.asc$/, ''), 'rsaDecryptLink');
+      };
+      fr.readAsArrayBuffer(file);
+    };
   </script>
 </body>
 </html>
