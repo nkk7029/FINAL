@@ -1,40 +1,46 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Steganography and Cryptography Assignment</title>
   <style>
     body { font-family: sans-serif; padding: 1rem; max-width: 800px; margin: auto; }
     h1 { text-align: center; }
     section { border: 1px solid #ddd; padding: 1rem; margin-bottom: 1rem; border-radius: 4px; }
-    label, input, textarea, select, button, a { display: block; width: 100%; margin: .5rem 0; }
+    label, input, textarea, button, a { display: block; width: 100%; margin: .5rem 0; }
     button, a.download { cursor: pointer; background: #0288d1; color: white; border: none; padding: .5rem; text-decoration: none; text-align: center; border-radius: 4px; }
     a.download { background: none; color: #0288d1; padding: 0; margin: .5rem 0; }
   </style>
 </head>
 <body>
-  <h1>Steganography and Cryptography Assignment</h1>
+  <h1>Steganography and Cryptography Assignment: Nardos Kassa 1002067029</h1>
 
-  <!-- Password Generator -->
-  <section id="passwords">
-    <h2>Password Generator</h2>
+  <!-- Login Section -->
+  <section id="login">
+    <h2>Login</h2>
+    <label for="usernameInput">Username:</label>
+    <input type="text" id="usernameInput" placeholder="Enter username">
+    <button id="loginBtn" class="button">Login</button>
+    <p id="loginStatus"></p>
+    <hr>
+    <h3>Password Generator</h3>
     <button id="genPassword" class="button">Generate Password</button>
     <label>Generated Password:</label>
-    <input type="text" id="passwordOutput" readonly />
+    <input type="text" id="passwordOutput" readonly>
   </section>
 
   <!-- LSB Steganography -->
   <section id="stego">
     <h2>LSB Steganography</h2>
-    <p>Skip first <strong>1024 bytes</strong> and embed every <strong>8th bit</strong> (L = 8). Append <code>\0</code> as end-of-message sentinel.</p>
+    <p>Skip first <strong>1024 bytes</strong> and embed every <strong>8th bit</strong> (L = 8). Append <code>\0</code> as sentinel.</p>
     <label>Carrier File:</label>
-    <input type="file" id="carrierInput" />
+    <input type="file" id="carrierInput">
     <label>Message to Hide:</label>
     <textarea id="secretMsg" placeholder="Enter your secret message..."></textarea>
     <button id="encodeBtn" class="button">Embed &amp; Download Stego File</button>
     <a id="downloadLink" class="download" style="display:none"></a>
-    <hr />
+    <hr>
     <button id="decodeBtn" class="button">Extract Hidden Message</button>
     <p id="decoded"></p>
   </section>
@@ -44,14 +50,14 @@
     <h2>AES Encryption</h2>
     <button id="genAESKey" class="button">Generate AES-256 Key</button>
     <label>AES Key (hex):</label>
-    <input type="text" id="aesKey" readonly />
+    <input type="text" id="aesKey" readonly>
     <label>File to Encrypt:</label>
-    <input type="file" id="aesFile" />
+    <input type="file" id="aesFile">
     <button id="encryptAES" class="button">Encrypt with AES</button>
     <a id="aesDownloadLink" class="download" style="display:none"></a>
-    <hr />
+    <hr>
     <label>File to Decrypt:</label>
-    <input type="file" id="aesEncryptedFile" />
+    <input type="file" id="aesEncryptedFile">
     <button id="decryptAES" class="button">Decrypt AES File</button>
     <a id="aesDecryptLink" class="download" style="display:none"></a>
   </section>
@@ -61,14 +67,14 @@
     <h2>3DES Encryption</h2>
     <button id="genDESKey" class="button">Generate 3DES Key (192-bit)</button>
     <label>3DES Key (hex):</label>
-    <input type="text" id="desKey" readonly />
+    <input type="text" id="desKey" readonly>
     <label>File to Encrypt:</label>
-    <input type="file" id="desFile" />
+    <input type="file" id="desFile">
     <button id="encryptDES" class="button">Encrypt with 3DES</button>
     <a id="desDownloadLink" class="download" style="display:none"></a>
-    <hr />
+    <hr>
     <label>File to Decrypt:</label>
-    <input type="file" id="desEncryptedFile" />
+    <input type="file" id="desEncryptedFile">
     <button id="decryptDES" class="button">Decrypt 3DES File</button>
     <a id="desDecryptLink" class="download" style="display:none"></a>
   </section>
@@ -77,7 +83,7 @@
   <section id="hashing">
     <h2>Hashing (SHA-3)</h2>
     <label>File to Hash:</label>
-    <input type="file" id="hashFile" />
+    <input type="file" id="hashFile">
     <button id="doHash" class="button">Compute SHA-3</button>
     <label>Hash Output (hex):</label>
     <textarea id="hashOutput" readonly></textarea>
@@ -92,12 +98,12 @@
     <label>Private Key (PEM):</label>
     <textarea id="privateKey" readonly></textarea>
     <label>File to Encrypt:</label>
-    <input type="file" id="rsaFile" />
+    <input type="file" id="rsaFile">
     <button id="encryptRSA" class="button">Encrypt File</button>
     <a id="rsaDownloadLink" class="download" style="display:none"></a>
-    <hr />
+    <hr>
     <label>File to Decrypt:</label>
-    <input type="file" id="rsaEncryptedFile" />
+    <input type="file" id="rsaEncryptedFile">
     <button id="decryptRSA" class="button">Decrypt File</button>
     <a id="rsaDecryptLink" class="download" style="display:none"></a>
   </section>
@@ -110,7 +116,7 @@
     const SKIP_BYTES = 1024;
     const STEP_BITS = 8;
 
-    // Bit helpers
+    // Bit manipulation helpers
     function bufferToBits(buf) {
       const bytes = new Uint8Array(buf), bits = [];
       bytes.forEach(b => { for (let i = 7; i >= 0; i--) bits.push((b >> i) & 1); });
@@ -125,19 +131,18 @@
       }
       return bytes.buffer;
     }
-    function embedBuffers(carrierBuf, messageBuf) {
-      const cBits = bufferToBits(carrierBuf), mBits = bufferToBits(messageBuf);
+    function embedBuffers(carrier, message) {
+      const cBits = bufferToBits(carrier), mBits = bufferToBits(message);
       const skip = SKIP_BYTES * 8;
       mBits.forEach((bit, i) => { const pos = skip + i * STEP_BITS; if (pos < cBits.length) cBits[pos] = bit; });
       return bitsToBuffer(cBits);
     }
-    function extractBuffer(stegoBuf) {
-      const bits = bufferToBits(stegoBuf), out = [];
+    function extractBuffer(stego) {
+      const bits = bufferToBits(stego), out = [];
       const skip = SKIP_BYTES * 8;
       for (let pos = skip; pos < bits.length; pos += STEP_BITS) out.push(bits[pos]);
       return bitsToBuffer(out);
     }
-
     function downloadBlob(blob, name, linkId) {
       const url = URL.createObjectURL(blob);
       const link = document.getElementById(linkId);
@@ -147,7 +152,13 @@
       link.style.display = 'block';
     }
 
-    // Password generator
+    // Login
+    document.getElementById('loginBtn').onclick = () => {
+      const user = document.getElementById('usernameInput').value;
+      document.getElementById('loginStatus').textContent = user ? `Logged in as ${user}` : 'Please enter username';
+    };
+
+    // Password
     document.getElementById('genPassword').onclick = () => {
       const length = 16;
       const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*()';
@@ -156,158 +167,150 @@
       document.getElementById('passwordOutput').value = pwd;
     };
 
-    // Stego
+    // Steganography
     document.getElementById('encodeBtn').onclick = () => {
-      const cFile = document.getElementById('carrierInput').files[0];
-      const msgTxt = document.getElementById('secretMsg').value;
-      if (!cFile || msgTxt === '') return alert('Select carrier and enter message');
-      const fr = new FileReader();
-      fr.onload = () => {
-        const carrierBuf = fr.result;
-        const msgBuf = new TextEncoder().encode(msgTxt + '\0').buffer;
+      const carrierFile = document.getElementById('carrierInput').files[0];
+      const msg = document.getElementById('secretMsg').value;
+      if (!carrierFile || msg === '') return alert('Select carrier & enter message');
+      const reader = new FileReader();
+      reader.onload = () => {
+        const carrierBuf = reader.result;
+        const msgBuf = new TextEncoder().encode(msg + '\0').buffer;
         const stegoBuf = embedBuffers(carrierBuf, msgBuf);
-        const extMatch = cFile.name.match(/(\.[^\.]+)$/);
-        const ext = extMatch ? extMatch[1] : '';
-        const base = cFile.name.replace(/(\.[^\.]+)$/, '');
-        const name = `${base}_stego${ext}`;
-        downloadBlob(new Blob([stegoBuf], { type: cFile.type || 'application/octet-stream' }), name, 'downloadLink');
+        const ext = (carrierFile.name.match(/(\.[^.]+)$/) || [''])[0];
+        const base = carrierFile.name.replace(/(\.[^.]+)$/, '');
+        downloadBlob(new Blob([stegoBuf], { type: carrierFile.type || 'application/octet-stream' }), `${base}_stego${ext}`, 'downloadLink');
       };
-      fr.readAsArrayBuffer(cFile);
+      reader.readAsArrayBuffer(carrierFile);
     };
     document.getElementById('decodeBtn').onclick = () => {
-      const cFile = document.getElementById('carrierInput').files[0];
-      if (!cFile) return alert('Select stego file');
-      const fr = new FileReader();
-      fr.onload = () => {
-        const extractedBuf = extractBuffer(fr.result);
-        const full = new TextDecoder().decode(extractedBuf);
+      const carrierFile = document.getElementById('carrierInput').files[0];
+      if (!carrierFile) return alert('Select stego file');
+      const reader = new FileReader();
+      reader.onload = () => {
+        const full = new TextDecoder().decode(extractBuffer(reader.result));
         document.getElementById('decoded').textContent = full.split('\0')[0];
       };
-      fr.readAsArrayBuffer(cFile);
+      reader.readAsArrayBuffer(carrierFile);
     };
 
     // AES
-    document.getElementById('genAESKey').onclick = () => {
-      const keyBytes = crypto.getRandomValues(new Uint8Array(32));
-      document.getElementById('aesKey').value = Array.from(keyBytes).map(b=>b.toString(16).padStart(2,'0')).join('');
-    };
-    function wordArrayToUint8Array(wordArray) {
+    function wordArrayToUint8(wordArray) {
       const { words, sigBytes } = wordArray;
       const u8 = new Uint8Array(sigBytes);
       let idx = 0;
       words.forEach(word => {
         for (let b = 3; b >= 0; b--) {
-          if (idx < sigBytes) {
-            u8[idx++] = (word >> (8 * b)) & 0xFF;
-          }
+          if (idx < sigBytes) u8[idx++] = (word >> (8 * b)) & 0xFF;
         }
       });
       return u8;
     }
+    document.getElementById('genAESKey').onclick = () => {
+      const kb = crypto.getRandomValues(new Uint8Array(32));
+      document.getElementById('aesKey').value = Array.from(kb).map(b => b.toString(16).padStart(2,'0')).join('');
+    };
     document.getElementById('encryptAES').onclick = () => {
       const keyHex = document.getElementById('aesKey').value;
       const file = document.getElementById('aesFile').files[0];
-      if (!keyHex||!file) return alert('Generate key and select file');
-      const fr = new FileReader(); fr.onload = () => {
-        const wa = CryptoJS.lib.WordArray.create(fr.result);
+      if (!keyHex || !file) return alert('Generate key & select file');
+      const reader = new FileReader(); reader.onload = () => {
+        const wa = CryptoJS.lib.WordArray.create(reader.result);
         const keyWA = CryptoJS.enc.Hex.parse(keyHex);
         const iv = CryptoJS.lib.WordArray.create(keyWA.words.slice(0,4));
         const encrypted = CryptoJS.AES.encrypt(wa, keyWA, { iv, format: CryptoJS.format.OpenSSL });
         const ctWA = CryptoJS.enc.Base64.parse(encrypted.toString());
-        const u8 = wordArrayToUint8Array(ctWA);
-        downloadBlob(new Blob([u8], {type:'application/octet-stream'}), file.name+'.aes', 'aesDownloadLink');
-      }; fr.readAsArrayBuffer(file);
+        downloadBlob(new Blob([wordArrayToUint8(ctWA)],{type:'application/octet-stream'}), file.name+'.aes', 'aesDownloadLink');
+      };
+      reader.readAsArrayBuffer(file);
     };
     document.getElementById('decryptAES').onclick = () => {
       const keyHex = document.getElementById('aesKey').value;
       const file = document.getElementById('aesEncryptedFile').files[0];
-      if (!keyHex||!file) return alert('Generate key and select encrypted file');
-      const fr = new FileReader(); fr.onload = () => {
-        const ctBytes = new Uint8Array(fr.result);
-        const ctWA = CryptoJS.lib.WordArray.create(ctBytes);
+      if (!keyHex || !file) return alert('Generate key & select encrypted file');
+      const reader = new FileReader(); reader.onload = () => {
+        const ct = new Uint8Array(reader.result);
+        const ctWA = CryptoJS.lib.WordArray.create(ct);
         const keyWA = CryptoJS.enc.Hex.parse(keyHex);
         const iv = CryptoJS.lib.WordArray.create(keyWA.words.slice(0,4));
-        const decryptedWA = CryptoJS.AES.decrypt({ ciphertext: ctWA }, keyWA, { iv, format: CryptoJS.format.OpenSSL });
-        const u8 = wordArrayToUint8Array(decryptedWA);
-        downloadBlob(new Blob([u8], {type:'application/octet-stream'}), file.name.replace(/\.aes$/,''), 'aesDecryptLink');
-      }; fr.readAsArrayBuffer(file);
+        const decrypted = CryptoJS.AES.decrypt({ ciphertext: ctWA }, keyWA, { iv, format: CryptoJS.format.OpenSSL });
+        downloadBlob(new Blob([wordArrayToUint8(decrypted)],{type:'application/octet-stream'}), file.name.replace(/\.aes$/, ''), 'aesDecryptLink');
+      };
+      reader.readAsArrayBuffer(file);
     };
 
     // 3DES
     document.getElementById('genDESKey').onclick = () => {
-      const keyBytes = crypto.getRandomValues(new Uint8Array(24));
-      document.getElementById('desKey').value = Array.from(keyBytes).map(b=>b.toString(16).padStart(2,'0')).join('');
+      const kb = crypto.getRandomValues(new Uint8Array(24));
+      document.getElementById('desKey').value = Array.from(kb).map(b=>b.toString(16).padStart(2,'0')).join('');
     };
     document.getElementById('encryptDES').onclick = () => {
       const keyHex = document.getElementById('desKey').value;
       const file = document.getElementById('desFile').files[0];
-      if (!keyHex||!file) return alert('Generate key and select file');
-      const fr = new FileReader(); fr.onload=() => {
-        const wa = CryptoJS.lib.WordArray.create(fr.result);
+      if (!keyHex || !file) return alert('Generate key & select file');
+      const reader = new FileReader(); reader.onload = () => {
+        const wa = CryptoJS.lib.WordArray.create(reader.result);
         const keyWA = CryptoJS.enc.Hex.parse(keyHex);
         const iv = CryptoJS.lib.WordArray.create(keyWA.words.slice(0,2));
         const encrypted = CryptoJS.TripleDES.encrypt(wa, keyWA, { iv, format: CryptoJS.format.OpenSSL });
         const ctWA = CryptoJS.enc.Base64.parse(encrypted.toString());
-        const u8 = wordArrayToUint8Array(ctWA);
-        downloadBlob(new Blob([u8], {type:'application/octet-stream'}), file.name+'.des', 'desDownloadLink');
-      }; fr.readAsArrayBuffer(file);
+        downloadBlob(new Blob([wordArrayToUint8(ctWA)],{type:'application/octet-stream'}), file.name+'.des', 'desDownloadLink');
+      };
+      reader.readAsArrayBuffer(file);
     };
     document.getElementById('decryptDES').onclick = () => {
       const keyHex = document.getElementById('desKey').value;
       const file = document.getElementById('desEncryptedFile').files[0];
-      if (!keyHex||!file) return alert('Generate key and select encrypted file');
-      const fr = new FileReader(); fr.onload=() => {
-        const ctBytes = new Uint8Array(fr.result);
-        const ctWA = CryptoJS.lib.WordArray.create(ctBytes);
+      if (!keyHex || !file) return alert('Generate key & select encrypted file');
+      const reader = new FileReader(); reader.onload = () => {
+        const ct = new Uint8Array(reader.result);
+        const ctWA = CryptoJS.lib.WordArray.create(ct);
         const keyWA = CryptoJS.enc.Hex.parse(keyHex);
         const iv = CryptoJS.lib.WordArray.create(keyWA.words.slice(0,2));
-        const decryptedWA = CryptoJS.TripleDES.decrypt({ ciphertext: ctWA }, keyWA, { iv, format: CryptoJS.format.OpenSSL });
-        const u8 = wordArrayToUint8Array(decryptedWA);
-        downloadBlob(new Blob([u8], {type:'application/octet-stream'}), file.name.replace(/\.des$/,''), 'desDecryptLink');
-      }; fr.readAsArrayBuffer(file);
+        const decrypted = CryptoJS.TripleDES.decrypt({ ciphertext: ctWA }, keyWA, { iv, format: CryptoJS.format.OpenSSL });
+        downloadBlob(new Blob([wordArrayToUint8(decrypted)],{type:'application/octet-stream'}), file.name.replace(/\.des$/, ''), 'desDecryptLink');
+      };
+      reader.readAsArrayBuffer(file);
     };
 
-    // Hashing handler
+    // Hashing
     document.getElementById('doHash').onclick = () => {
       const file = document.getElementById('hashFile').files[0];
-      if (!file) return alert('Select file to hash');
-      const fr = new FileReader(); fr.onload = () => {
-        const wa = CryptoJS.lib.WordArray.create(fr.result);
-        const hash = CryptoJS.SHA3(wa).toString();
-        document.getElementById('hashOutput').value = hash;
+      if (!file) return alert('Select file');
+      const reader = new FileReader(); reader.onload = () => {
+        const wa = CryptoJS.lib.WordArray.create(reader.result);
+        document.getElementById('hashOutput').value = CryptoJS.SHA3(wa).toString();
       };
-      fr.readAsArrayBuffer(file);
+      reader.readAsArrayBuffer(file);
     };
 
-    // RSA events
+    // RSA
     let rsaPriv, rsaPub;
     document.getElementById('genRSA').onclick = async () => {
       const key = await openpgp.generateKey({ type: 'rsa', rsaBits: 2048, userIDs: [{ name: 'User', email: '' }] });
       rsaPriv = await openpgp.readPrivateKey({ armoredKey: key.privateKey });
-      rsaPub  = await openpgp.readKey({ armoredKey: key.publicKey });
-      document.getElementById('publicKey').value  = key.publicKey;
+      rsaPub = await openpgp.readKey({ armoredKey: key.publicKey });
+      document.getElementById('publicKey').value = key.publicKey;
       document.getElementById('privateKey').value = key.privateKey;
     };
     document.getElementById('encryptRSA').onclick = async () => {
-      const file = document.getElementById('rsaFile').files[0];
-      if (!file || !rsaPub) return alert('Select file and generate keys');
-      const fr = new FileReader(); fr.onload = async () => {
-        const message = await openpgp.createMessage({ binary: new Uint8Array(fr.result) });
-        const encryptedBinary = await openpgp.encrypt({ message, encryptionKeys: rsaPub, format: 'binary' });
-        downloadBlob(new Blob([encryptedBinary], { type: 'application/octet-stream' }), file.name + '.pgp', 'rsaDownloadLink');
+      const file = document.getElementById('rsaFile').files[0]; if (!file || !rsaPub) return alert('Select file & generate keys');
+      const reader = new FileReader(); reader.onload = async () => {
+        const message = await openpgp.createMessage({ binary: new Uint8Array(reader.result) });
+        const encrypted = await openpgp.encrypt({ message, encryptionKeys: rsaPub, format: 'binary' });
+        downloadBlob(new Blob([encrypted],{type:'application/octet-stream'}), file.name + '.pgp', 'rsaDownloadLink');
       };
-      fr.readAsArrayBuffer(file);
+      reader.readAsArrayBuffer(file);
     };
     document.getElementById('decryptRSA').onclick = async () => {
-      const file = document.getElementById('rsaEncryptedFile').files[0];
-      if (!file || !rsaPriv) return alert('Select encrypted file and generate keys');
-      const fr = new FileReader(); fr.onload = async () => {
-        const encrypted = new Uint8Array(fr.result);
-        const message = await openpgp.readMessage({ binaryData: encrypted });
+      const file = document.getElementById('rsaEncryptedFile').files[0]; if (!file || !rsaPriv) return alert('Select encrypted file & generate keys');
+      const reader = new FileReader(); reader.onload = async () => {
+        const encrypted = new Uint8Array(reader.result);
+        const message = await openpgp.readMessage({ binaryMessage: encrypted });
         const { data: decrypted } = await openpgp.decrypt({ message, decryptionKeys: rsaPriv, format: 'binary' });
-        downloadBlob(new Blob([decrypted], { type: 'application/octet-stream' }), file.name.replace(/\.pgp$/,''), 'rsaDecryptLink');
+        downloadBlob(new Blob([decrypted],{type:'application/octet-stream'}), file.name.replace(/\.pgp$/,''), 'rsaDecryptLink');
       };
-      fr.readAsArrayBuffer(file);
+      reader.readAsArrayBuffer(file);
     };
   </script>
 </body>
