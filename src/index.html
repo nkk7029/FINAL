@@ -14,20 +14,20 @@
   </style>
 </head>
 <body>
-  <h1>Steganography and Cryptography Assignment: Nardos Kassa 1002067029</h1>
+  <h1>Steganography and Cryptography Assignment</h1>
+  <h2>Nardos Kassa 1002067029</h2>
 
   <!-- Login Section -->
   <section id="login">
     <h2>Login</h2>
     <label for="usernameInput">Username:</label>
     <input type="text" id="usernameInput" placeholder="Enter username">
-    <button id="loginBtn" class="button">Login</button>
-    <p id="loginStatus"></p>
-    <hr>
     <h3>Password Generator</h3>
     <button id="genPassword" class="button">Generate Password</button>
     <label>Generated Password:</label>
     <input type="text" id="passwordOutput" readonly>
+    <button id="loginBtn" class="button">Login</button>
+    <p id="loginStatus"></p>
   </section>
 
   <!-- LSB Steganography -->
@@ -122,6 +122,7 @@
       bytes.forEach(b => { for (let i = 7; i >= 0; i--) bits.push((b >> i) & 1); });
       return bits;
     }
+
     function bitsToBuffer(bits) {
       const len = Math.floor(bits.length / 8), bytes = new Uint8Array(len);
       for (let i = 0; i < len; i++) {
@@ -131,18 +132,21 @@
       }
       return bytes.buffer;
     }
+
     function embedBuffers(carrier, message) {
       const cBits = bufferToBits(carrier), mBits = bufferToBits(message);
       const skip = SKIP_BYTES * 8;
       mBits.forEach((bit, i) => { const pos = skip + i * STEP_BITS; if (pos < cBits.length) cBits[pos] = bit; });
       return bitsToBuffer(cBits);
     }
+
     function extractBuffer(stego) {
       const bits = bufferToBits(stego), out = [];
       const skip = SKIP_BYTES * 8;
       for (let pos = skip; pos < bits.length; pos += STEP_BITS) out.push(bits[pos]);
       return bitsToBuffer(out);
     }
+
     function downloadBlob(blob, name, linkId) {
       const url = URL.createObjectURL(blob);
       const link = document.getElementById(linkId);
@@ -155,10 +159,16 @@
     // Login
     document.getElementById('loginBtn').onclick = () => {
       const user = document.getElementById('usernameInput').value;
-      document.getElementById('loginStatus').textContent = user ? `Logged in as ${user}` : 'Please enter username';
+      const pwd = document.getElementById('passwordOutput').value;
+      const status = document.getElementById('loginStatus');
+      if (!user || !pwd) {
+        status.textContent = 'Please enter username and generate password';
+      } else {
+        status.textContent = `Logged in as ${user}`;
+      }
     };
 
-    // Password
+    // Password generator
     document.getElementById('genPassword').onclick = () => {
       const length = 16;
       const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*()';
