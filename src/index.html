@@ -32,7 +32,7 @@
 
   <!-- LSB Steganography -->
   <section id="stego">
-    <h2>LSB Steganography</h2>
+    <h2>Steganography</h2>
     <p>Skip first <strong>1024 bytes</strong> and embed every <strong>8th bit</strong> (L = 8). Append <code>\0</code></p>
     <label>Carrier File:</label>
     <input type="file" id="carrierInput">
@@ -93,9 +93,9 @@
   <section id="rsa">
     <h2>Asymmetric RSA (2048-bit)</h2>
     <button id="genRSA" class="button">Generate Keypair</button>
-    <label>Public Key (PEM):</label>
+    <label>Public Key:</label>
     <textarea id="publicKey" readonly></textarea>
-    <label>Private Key (PEM):</label>
+    <label>Private Key:</label>
     <textarea id="privateKey" readonly></textarea>
     <label>File to Encrypt:</label>
     <input type="file" id="rsaFile">
