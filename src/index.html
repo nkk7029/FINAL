@@ -16,24 +16,24 @@
 <body>
   <h1>Steganography and Cryptography Assignment: Nardos Kassa 1002067029</h1>
 
-  <!-- Login Section -->
-  <section id="login">
-    <h2>Login</h2>
-    <label for="usernameInput">Username:</label>
-    <input type="text" id="usernameInput" placeholder="Enter username">
-    <button id="loginBtn" class="button">Login</button>
-    <p id="loginStatus"></p>
-    <hr>
-    <h3>Password Generator</h3>
-    <button id="genPassword" class="button">Generate Password</button>
-    <label>Generated Password:</label>
-    <input type="text" id="passwordOutput" readonly>
-  </section>
+ <!-- Login Section -->
+ <section id="login">
+  <h2>Login</h2>
+  <label for="usernameInput">Username:</label>
+  <input type="text" id="usernameInput" placeholder="Enter username">
+  <button id="genPassword" class="button">Generate Password</button>
+  <label>Generated Password:</label>
+  <input type="text" id="passwordOutput" readonly>
+
+  <hr>
+  <button id="loginBtn" class="button">Login</button>
+  <p id="loginStatus"></p>
+</section>
 
   <!-- LSB Steganography -->
   <section id="stego">
     <h2>LSB Steganography</h2>
-    <p>Skip first <strong>1024 bytes</strong> and embed every <strong>8th bit</strong> (L = 8). Append <code>\0</code> as sentinel.</p>
+    <p>Skip first <strong>1024 bytes</strong> and embed every <strong>8th bit</strong> (L = 8). Append <code>\0</code></p>
     <label>Carrier File:</label>
     <input type="file" id="carrierInput">
     <label>Message to Hide:</label>
